@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import torch
 import timm
+from functools import partial
 
 from pytorch_grad_cam import GradCAM, \
     ScoreCAM, \
@@ -94,6 +95,7 @@ if __name__ == '__main__':
 
     # target_layers = [model.layers[-1].blocks[-1]]
     target_layers = [model.layers[-1].blocks[-2]]
+    # target_layers = [model.layers[-2].blocks[-2]] # windows size: 24
     # target_layers = [model.layers[-1].blocks[-1].attn]
     # target_layers = [model.layers[-1].blocks[-1].local_conv.bn] # wrong dimensions
 
@@ -104,13 +106,17 @@ if __name__ == '__main__':
         cam = methods[args.method](model=model,
                                    target_layers=target_layers,
                                    use_cuda=args.use_cuda,
-                                   reshape_transform=reshape_transform,
+                                   reshape_transform=partial(reshape_transform, height=12, width=12),
                                    ablation_layer=AblationLayerVit())
     else:
         cam = methods[args.method](model=model,
                                    target_layers=target_layers,
                                    use_cuda=args.use_cuda,
-                                   reshape_transform=reshape_transform)
+                                   reshape_transform=partial(reshape_transform, height=12, width=12))
+        # cam = methods[args.method](model=model,
+        #                            target_layers=target_layers,
+        #                            use_cuda=args.use_cuda,
+        #                            reshape_transform=partial(reshape_transform, height=24, width=24))
 
     rgb_img = cv2.imread(args.image_path, 1)[:, :, ::-1]
     rgb_img = cv2.resize(rgb_img, (384, 384))
